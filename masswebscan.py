@@ -1,13 +1,11 @@
-import re
 import queue
 import requests
 import argparse
 import urllib3
-import RequestUtils
-import time
+from ZeroXRequests import RequestUtils
 import sys
 import threading
-import Lee_Requests
+from ZeroXRequests import RawRequests
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -105,23 +103,6 @@ def make_request(url, headers):
         error = str(error)
         #print(error)
 
-def make_falc_request(url, headers, method, body, proxy):
-    try:
-        private_session = requests.Session()
-        if len(body) > 0:
-            prepped = requests.Request(method, url, data=body, headers=Scan.headers).prepare()
-        else:
-            prepped = requests.Request(method, url, headers=headers).prepare()
-
-        for key, value in headers.items():
-            prepped.headers[key] = value
-
-        req = private_session.send(prepped, verify=verify, timeout=timeout, allow_redirects=redirect, proxies=proxy)
-
-        return req
-    except Exception as error:
-        pass
-
 def progressBar():
     sys.stdout.flush()
     sys.stdout.write("[")
@@ -157,6 +138,13 @@ def main():
         thread = threading.Thread(target=start)
         thread.start()
 
+def RequestProxy(url):
+    #### ADD Your code Here
+    req = make_request(url, Scan.headers)
+    if req != None:
+        print(req.text)
+
+
 def start():
     while True:
         if Scan.stop_threads:
@@ -166,17 +154,10 @@ def start():
             Scan.stop_threads = True
             exit(0)
 
-        req = make_request(url, Scan.headers)
-        if req != None:
-            for key, value in req.headers.items():
-                print(url + " :: " + key + ": " + value)
-#            nauth_req = make_request(url, {})
-#            if nauth_req != None:
-#                if (nauth_req.status_code != req.status_code) or (len(nauth_req.text) != len(req.text)):
-#                    print(url + " edited: " + str(req.status_code) + " normal: " + str(nauth_req.status_code))
-#                    make_falc_request(url, Scan.headers, method, body, {"https":"127.0.0.1:8080"})
+        RequestProxy(url)
+
         Scan.scanned += 1
-        progressBar()
+#        progressBar()
 
 
 main()
