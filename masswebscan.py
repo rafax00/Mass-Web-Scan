@@ -28,7 +28,8 @@ parser.add_argument("-method", dest="method", default="GET", help="Set request m
 parser.add_argument("-body", dest="body", default="", help="Set request body (file)")
 parser.add_argument("-add-url", dest="end_of_url", default="", help="Add string to the end of the url")
 parser.add_argument("-headers", nargs="+", dest="headers", default={}, help="Set request headers")
-parser.add_argument("-timeout", dest="timeout", default=2, help="Set request timeout")
+parser.add_argument("-timeout", dest="timeout", default=8, help="Set request timeout")
+parser.add_argument("-progress", dest="show_progress", action="store_true", help="Show progress bar")
 args = parser.parse_args()
 
 str_proxy = args.proxy
@@ -36,6 +37,7 @@ urls_file = args.urls_file
 threads = int(args.threads)
 verify = args.verify
 redirect = args.redirect
+show_progress = args.show_progress
 end_of_url = args.end_of_url
 timeout = int(args.timeout)
 method = str(args.method)
@@ -142,7 +144,9 @@ def RequestProxy(url):
     #### ADD Your code Here
     req = make_request(url, Scan.headers)
     if req != None:
-        print(req.text)
+        if req.status_code == 200:
+            if 'AIza' in req.text:
+                print(url)
 
 
 def start():
@@ -157,7 +161,8 @@ def start():
         RequestProxy(url)
 
         Scan.scanned += 1
-#        progressBar()
+        if show_progress:
+            progressBar()
 
 
 main()
