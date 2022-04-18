@@ -9,7 +9,7 @@ from ZeroXRequests import RawRequests
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-class Scan():
+class Options():
     url = queue.Queue()
     headers = {}
     proxy = {}
@@ -29,7 +29,6 @@ parser.add_argument("-body", dest="body", default="", help="Set request body (fi
 parser.add_argument("-add-url", dest="end_of_url", default="", help="Add string to the end of the url")
 parser.add_argument("-headers", nargs="+", dest="headers", default={}, help="Set request headers")
 parser.add_argument("-timeout", dest="timeout", default=8, help="Set request timeout")
-parser.add_argument("-progress", dest="show_progress", action="store_true", help="Show progress bar")
 args = parser.parse_args()
 
 str_proxy = args.proxy
@@ -37,7 +36,6 @@ urls_file = args.urls_file
 threads = int(args.threads)
 verify = args.verify
 redirect = args.redirect
-show_progress = args.show_progress
 end_of_url = args.end_of_url
 timeout = int(args.timeout)
 method = str(args.method)
@@ -45,7 +43,7 @@ body = args.body
 headers = args.headers
 
 def load_vars():
-    Scan.proxy = {"http": str_proxy, "https": str_proxy}
+    Options.proxy = {"http": str_proxy, "https": str_proxy}
 
     final_headers = {}
     for header in headers:
@@ -59,9 +57,11 @@ def load_vars():
                 value += splited_header[i] + ": "
 
             final_headers.update({var: value})
-    Scan.headers = final_headers
+
+    Options.headers.update(final_headers)
+
     if body != "":
-        Scan.body = read_file(body, "string")
+        Options.body = read_file(body, "string")
 
 def read_file(name, type):
     try:
@@ -90,7 +90,7 @@ def make_request(url, headers):
         private_session = requests.Session()
 
         if len(body) > 0:
-            prepped = requests.Request(method, url, data=Scan.body, headers=Scan.headers).prepare()
+            prepped = requests.Request(method, url, data=Options.body, headers=Options.headers).prepare()
         else:
             prepped = requests.Request(method, url, headers=headers).prepare()
 
@@ -98,7 +98,7 @@ def make_request(url, headers):
             prepped.headers[key] = value
 
 
-        req = private_session.send(prepped, verify=verify, timeout=timeout, allow_redirects=redirect, proxies=Scan.proxy)
+        req = private_session.send(prepped, verify=verify, timeout=timeout, allow_redirects=redirect, proxies=Options.proxy)
 
         return req
     except Exception as error:
@@ -106,10 +106,14 @@ def make_request(url, headers):
         #print(error)
 
 def progressBar():
-    sys.stdout.flush()
-    sys.stdout.write("[")
-    sys.stdout.write(str(Scan.scanned) + "/" + str(Scan.to_scan))
-    sys.stdout.write("]\r")
+    try:
+        Options.scanned += 1
+        sys.stdout.flush()
+        sys.stdout.write("[")
+        sys.stdout.write(str(Options.scanned) + "/" + str(Options.to_scan))
+        sys.stdout.write("]\r")
+    except Exception as error:
+        print(error)
 
 def get_domain_from_subdomain(subdomain):
     splited = subdomain.split(".")
@@ -125,12 +129,12 @@ def get_domain_from_subdomain(subdomain):
 
 def load_urls():
     urls = read_file(urls_file, "list")
-    Scan.to_scan = len(urls)
+    Options.to_scan = len(urls)
     for url in urls:
         if (not url.startswith("http://")) and (not url.startswith("https://")):
             url = "https://" + url
-        Scan.url.put(url + end_of_url)
-    Scan.url.put("exit")
+        Options.url.put(url + end_of_url)
+    Options.url.put("exit")
 
 def main():
     load_vars()
@@ -142,27 +146,23 @@ def main():
 
 def RequestProxy(url):
     #### ADD Your code Here
-    req = make_request(url, Scan.headers)
+    req = make_request(url, Options.headers)
     if req != None:
-        if req.status_code == 200:
-            if 'AIza' in req.text:
-                print(url)
+        print(url)
 
 
 def start():
     while True:
-        if Scan.stop_threads:
+        if Options.stop_threads:
             exit(0)
-        url = Scan.url.get()
+        url = Options.url.get()
         if url == "exit":
-            Scan.stop_threads = True
+            Options.stop_threads = True
             exit(0)
 
         RequestProxy(url)
 
-        Scan.scanned += 1
-        if show_progress:
-            progressBar()
+        progressBar()
 
 
 main()
