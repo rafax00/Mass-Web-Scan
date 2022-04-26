@@ -11,7 +11,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Options():
     url = queue.Queue()
-    headers = {}
+    headers = {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"}
     proxy = {}
     stop_threads = False
     body = ""
@@ -97,7 +97,6 @@ def make_request(url, headers):
         for key, value in headers.items():
             prepped.headers[key] = value
 
-
         req = private_session.send(prepped, verify=verify, timeout=timeout, allow_redirects=redirect, proxies=Options.proxy)
 
         return req
@@ -147,10 +146,12 @@ def main():
 def RequestProxy(url):
     #### ADD Your code Here
     req = make_request(url, Options.headers)
-    if req != None:
-        print(url)
-
-
+    if req != None:  
+        for key, value in req.headers.items():
+            if key.lower() == "content-type" and "html" in value.lower():
+                if '<"1337' in req.text:
+                    print('[*][XSS] ' + url)
+       
 def start():
     while True:
         if Options.stop_threads:
