@@ -10,17 +10,22 @@ from ZeroXRequests import RawRequests
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Options():
-    url = queue.Queue()
+    urls = queue.Queue()
     headers = {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"}
     proxy = {}
-    stop_threads = False
     body = ""
+    exit_flag = "23140ded-03fd-4d35-bde3-448ecc5e3b10_exit"
+
+class Bar():
     to_scan = 0
-    scanned = 0
+    scanned = 0 
+
+class RequestSession():
+    public_session = requests.Session()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("urls_file")
-parser.add_argument("-t", dest="threads", default=5, help="Set threads number")
+parser.add_argument("-t", dest="threads", default=60, help="Set threads number")
 parser.add_argument("-v", dest="verify", action="store_true", help="Verify SSL")
 parser.add_argument("-r", dest="redirect", action="store_true", help="Allow redirects")
 parser.add_argument("-proxy", dest="proxy", default={}, help="Set proxy")
@@ -87,53 +92,35 @@ def read_file(name, type):
 
 def make_request(url, headers):
     try:
-        private_session = requests.Session()
-
         if len(body) > 0:
-            prepped = requests.Request(method, url, data=Options.body, headers=Options.headers).prepare()
+            prepped = requests.Request(method, url, data=Options.body, headers=headers).prepare()
         else:
             prepped = requests.Request(method, url, headers=headers).prepare()
 
         for key, value in headers.items():
             prepped.headers[key] = value
 
-        req = private_session.send(prepped, verify=verify, timeout=timeout, allow_redirects=redirect, proxies=Options.proxy)
+        req = RequestSession.public_session.send(prepped, verify=verify, timeout=timeout, allow_redirects=redirect, proxies=Options.proxy)
 
         return req
     except Exception as error:
         error = str(error)
-        #print(error)
 
 def progressBar():
-    try:
-        Options.scanned += 1
-        sys.stdout.flush()
-        sys.stdout.write("[")
-        sys.stdout.write(str(Options.scanned) + "/" + str(Options.to_scan))
-        sys.stdout.write("]\r")
-    except Exception as error:
-        print(error)
-
-def get_domain_from_subdomain(subdomain):
-    splited = subdomain.split(".")
-    rest = ""
-    for i in range(0, len(splited)):
-        if i >= len(splited)-2:
-            if i == len(splited)-1:
-                rest += splited[i]
-            else:
-                rest += splited[i] + "."
-
-    return rest
+    Bar.scanned += 1
+    sys.stdout.flush()
+    sys.stdout.write("[")
+    sys.stdout.write(str(Bar.scanned) + "/" + str(Bar.to_scan))
+    sys.stdout.write("]\r")
 
 def load_urls():
     urls = read_file(urls_file, "list")
-    Options.to_scan = len(urls)
+    Bar.to_scan = len(urls)
     for url in urls:
         if (not url.startswith("http://")) and (not url.startswith("https://")):
             url = "https://" + url
-        Options.url.put(url + end_of_url)
-    Options.url.put("exit")
+        Options.urls.put(url + end_of_url)
+    Options.urls.put(Options.exit_flag)
 
 def main():
     load_vars()
@@ -147,23 +134,18 @@ def RequestProxy(url):
     #### ADD Your code Here
     req = make_request(url, Options.headers)
     if req != None:  
-        for key, value in req.headers.items():
-            if key.lower() == "content-type" and "html" in value.lower():
-                if '<"1337' in req.text:
-                    print('[*][XSS] ' + url)
-       
+        pass
+     
 def start():
     while True:
-        if Options.stop_threads:
-            exit(0)
-        url = Options.url.get()
-        if url == "exit":
-            Options.stop_threads = True
-            exit(0)
+        url = Options.urls.get()
+        
+        if url == Options.exit_flag:
+            Options.urls.put(Options.exit_flag)
+            break
 
         RequestProxy(url)
-
+        
         progressBar()
-
-
+        
 main()
