@@ -103,8 +103,8 @@ def make_request(url, headers):
         req = RequestSession.public_session.send(prepped, verify=verify, timeout=timeout, allow_redirects=redirect, proxies=Options.proxy)
 
         return req
-    except Exception as error:
-        error = str(error)
+    except:
+        pass
 
 def load_urls():
     urls = read_file(urls_file, "list")
