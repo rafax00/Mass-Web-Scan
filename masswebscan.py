@@ -106,13 +106,6 @@ def make_request(url, headers):
     except Exception as error:
         error = str(error)
 
-def progressBar():
-    Bar.scanned += 1
-    sys.stdout.flush()
-    sys.stdout.write("[")
-    sys.stdout.write(str(Bar.scanned) + "/" + str(Bar.to_scan))
-    sys.stdout.write("]\r")
-
 def load_urls():
     urls = read_file(urls_file, "list")
     Bar.to_scan = len(urls)
@@ -122,13 +115,12 @@ def load_urls():
         Options.urls.put(url + end_of_url)
     Options.urls.put(Options.exit_flag)
 
-def main():
-    load_vars()
-    load_urls()
-
-    for i in range(0, threads):
-        thread = threading.Thread(target=start)
-        thread.start()
+def progressBar():
+    Bar.scanned += 1
+    sys.stdout.flush()
+    sys.stdout.write("[")
+    sys.stdout.write(str(Bar.scanned) + "/" + str(Bar.to_scan))
+    sys.stdout.write("]\r")
 
 def RequestProxy(url):
     #### ADD Your code Here
@@ -147,5 +139,13 @@ def start():
         RequestProxy(url)
         
         progressBar()
-        
+
+def main():
+    load_vars()
+    load_urls()
+
+    for i in range(0, threads):
+        thread = threading.Thread(target=start)
+        thread.start()
+
 main()
