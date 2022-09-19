@@ -5,6 +5,7 @@ import urllib3
 from ZeroXRequests import RequestUtils
 import sys
 import threading
+import os
 from ZeroXRequests import RawRequests
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -107,8 +108,11 @@ def make_request(url, headers):
         pass
 
 def load_urls():
-    urls = read_file(urls_file, "list")
-    Bar.to_scan = len(urls)
+    if os.path.isfile(urls_file):
+        urls = read_file(urls_file, "list")
+        Bar.to_scan = len(urls)
+    else:
+        urls = [urls_file]
     for url in urls:
         if (not url.startswith("http://")) and (not url.startswith("https://")):
             url = "https://" + url
@@ -125,9 +129,9 @@ def progressBar():
 def RequestProxy(url):
     #### ADD Your code Here
     req = make_request(url, Options.headers)
-    if req != None:  
-        pass
-     
+    if req != None:
+        print(req.text)
+    
 def start():
     while True:
         url = Options.urls.get()
