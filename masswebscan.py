@@ -48,6 +48,8 @@ method = str(args.method)
 body = args.body
 headers = args.headers
 
+lock = threading.Lock()
+
 def load_vars():
     Options.proxy = {"http": str_proxy, "https": str_proxy}
 
@@ -107,6 +109,11 @@ def make_request(url, headers):
     except:
         pass
 
+def safe_print(msg):
+    lock.acquire()
+    print(msg)
+    lock.release()
+
 def load_urls():
     if os.path.isfile(urls_file):
         urls = read_file(urls_file, "list")
@@ -130,7 +137,7 @@ def RequestProxy(url):
     #### ADD Your code Here
     req = make_request(url, Options.headers)
     if req != None:
-        print(req.text)
+        safe_print(url)
     
 def start():
     while True:
